@@ -87,16 +87,78 @@ def depthFirstSearch(problem: SearchProblem):
     print("Start's successors:", problem.getSuccessors(problem.getStartState()))
     """
     "*** YOUR CODE HERE ***"
+    startState = problem.getStartState()
+
+    fringe = util.Stack()
+    visited = []
+
+    fringe.push((startState, [], 0))
+
+    while not fringe.isEmpty():
+        currentState, actions, costs = fringe.pop()
+        if not currentState in visited:
+            "update visited status"
+            visited.append(currentState)
+            "if this goal state return the actions to reach it"
+            if problem.isGoalState(currentState):
+                return actions
+            "push all successors not in visited"
+            for state, action, cost in problem.getSuccessors(currentState):
+                if not state in visited:
+                    fringe.push((state, actions + [action], cost))
     util.raiseNotDefined()
 
 def breadthFirstSearch(problem: SearchProblem):
     """Search the shallowest nodes in the search tree first."""
     "*** YOUR CODE HERE ***"
+    startState = problem.getStartState()
+
+    fringe = util.Queue()
+    visited = []
+
+    fringe.push((startState, [], 0))
+
+    while not fringe.isEmpty():
+        currentState, actions, costs = fringe.pop()
+        if not currentState in visited:
+            "update visited status"
+            visited.append(currentState)
+            "if this goal state return the actions to reach it"
+            if problem.isGoalState(currentState):
+                return actions
+            "push all successors not in visited"
+            for state, action, cost in problem.getSuccessors(currentState):
+                if not state in visited:
+                    fringe.push((state, actions + [action], cost))
     util.raiseNotDefined()
 
 def uniformCostSearch(problem: SearchProblem):
-    """Search the node of least total cost first."""
-    "*** YOUR CODE HERE ***"
+    startState = problem.getStartState()
+    "ucs using priority queue so as to prioriize the successors with least cost"
+    fringe = util.PriorityQueue()
+    visited = []
+
+    "the fringe apart from the state , action, cost also has priority 0 here"
+    "which is same as the cost as we want the least total cost first"
+    fringe.push((startState, [], 0), 0 )
+
+    "keep popping till no more nodes in the fringe"
+    while not fringe.isEmpty():
+        currentState, actions, costs = fringe.pop()
+        "curcial as this prevents expanding the same node twice"
+        if not currentState in visited:
+            "update visited status"
+            visited.append(currentState)
+            "if this goal state return the actions to reach it"
+            if problem.isGoalState(currentState):
+                return actions
+            "push all successors not in visited"
+            for state, action, cost in problem.getSuccessors(currentState):
+                if not state in visited:
+                    "update cost to reflect total cost and prioritize the least"
+                    "as the priority queue is implemeneted using heapq which pops"
+                    "smallest element first and pushes such to maintain this order"
+                    fringe.push((state, actions + [action], costs + cost), costs + cost)
     util.raiseNotDefined()
 
 def nullHeuristic(state, problem=None):
