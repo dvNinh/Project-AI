@@ -192,7 +192,7 @@ def atLeastOne(literals: List[Expr]) -> Expr:
     True
     """
     "*** BEGIN YOUR CODE HERE ***"
-    util.raiseNotDefined()
+    return logic.disjoin(literals)
     "*** END YOUR CODE HERE ***"
 
 
@@ -204,7 +204,16 @@ def atMostOne(literals: List[Expr]) -> Expr:
     itertools.combinations may be useful here.
     """
     "*** BEGIN YOUR CODE HERE ***"
-    util.raiseNotDefined()
+    n = len(literals)
+    clauses = []
+
+    # Generate clauses ensuring that at most one literal is true
+    for i in range(0, n):
+        for j in range(i + 1, n):
+            clauses.append(logic.disjoin(~literals[i], ~literals[j]))
+
+    # Combine all clauses using the AND operator
+    return logic.conjoin(clauses)
     "*** END YOUR CODE HERE ***"
 
 
