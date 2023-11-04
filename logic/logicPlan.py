@@ -56,7 +56,7 @@ def sentence1() -> Expr:
     C = logic.Expr('C')
 
     # sentences
-    Condition1 = logic.disjoin(A, B)  # A ∨ B
+    Condition1 = logic.disjoin(A, B)  # A ∨ B   
     Condition2 = ~A % (~B | C)  # # ¬A ↔ (¬ B ∨ C)
     Condition3 = logic.disjoin(~A, ~B, C)  # ¬ A ∨ ¬ B ∨ C
 
@@ -428,10 +428,35 @@ def positionLogicPlan(problem) -> List:
     non_wall_coords = [loc for loc in all_coords if loc not in walls_list]
     actions = [ 'North', 'South', 'East', 'West' ]
     KB = []
+    KB.append(logic.PropSymbolExpr(pacman_str, x0, y0, time = 0))
+    
+    for t in range(50):
+        # Print time step; this is to see that the code is running and how far it is
+        print(f"Time step = {t}")
+        
+        # Add to KB: Initial knowledge: Pacman can only be at exactlyOne of the locations in non_wall_coords at timestep t
+        pacman_locations = exactlyOne([logic.PropSymbolExpr(pacman_str, wall_coord[0], wall_coord[1], time = t) for wall_coord in non_wall_coords])
+        KB.append(pacman_locations)  # Add to KB
 
-    "*** BEGIN YOUR CODE HERE ***"
-    util.raiseNotDefined()
+        # Is there a satisfying assignment for the variables given the knowledge base so far?
+        # Use findModel and pass in the Goal Assertion and KB
+        goal_state = logic.PropSymbolExpr(pacman_str, xg, yg, time = t)
+        model = findModel(goal_state & logic.conjoin(KB))
+        if (model):
+            return extractActionSequence(model, actions)  # there is, return a sequence of actions from start to goal using extractActionSequence
+
+        # Add to KB: Pacman takes exactly one action per timestep
+        possible_actions = exactlyOne([logic.PropSymbolExpr(action, time = t) for action in actions])
+        KB.append(possible_actions)
+
+        # Add to KB: Transition Model sentences: call pacmanSuccessorAxiomSingle(...) for all possible pacman positions in non_wall_coords
+        for wall_coord in non_wall_coords: KB.append(pacmanSuccessorAxiomSingle(wall_coord[0], wall_coord[1], t+1, walls_grid))
+    
+    # No solution exists
+    return None
+    
     "*** END YOUR CODE HERE ***"
+      
 
 #______________________________________________________________________________
 # QUESTION 5
