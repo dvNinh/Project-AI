@@ -535,10 +535,41 @@ def mapping(problem, agent) -> Generator:
     KB.append(conjoin(outer_wall_sent))
 
     "*** BEGIN YOUR CODE HERE ***"
-    util.raiseNotDefined()
-
+    KB.append(logic.PropSymbolExpr(pacman_str, pac_x_0, pac_y_0, time = 0))
+    
+    # Add whether there is a wall at that location
+    KB.append(~logic.PropSymbolExpr(wall_str, pac_x_0, pac_y_0))
+    
     for t in range(agent.num_timesteps):
-        "*** END YOUR CODE HERE ***"
+        # Add pacphysics, action, and percept information to KB
+        KB.append(pacphysicsAxioms(t, all_coords, non_outer_wall_coords, known_map, sensorAxioms, allLegalSuccessorAxioms))
+    
+        # Add to KB: Pacman takes action prescribed by agent.actions[t]
+        KB.append(logic.PropSymbolExpr(agent.actions[t], time = t))
+        
+        # Get the percepts by calling agent.getPercepts() and pass the percepts to fourBitPerceptRules(...) for localization and mapping, or numAdjWallsPerceptRules(...) for SLAM.
+        # Add the resulting percept_rules to KB
+        KB.append(fourBitPerceptRules(t, agent.getPercepts()))
+        
+        # Find provable wall locations with updated KB
+        for wall in non_outer_wall_coords:
+            wall_exists = logic.PropSymbolExpr(wall_str, wall[0], wall[1])
+            cKB = logic.conjoin(KB)
+            
+            # Add to KB and update known_map: (x, y) locations where there is provably a wall.
+            if entails(cKB, wall_exists):                
+                KB.append(wall_exists)
+                known_map[wall[0]][wall[1]] = 1
+            
+            # Add to KB and update known_map: (x, y) locations where there is provably not a wall.
+            elif entails(cKB, ~wall_exists):
+                KB.append(~wall_exists)
+                known_map[wall[0]][wall[1]] = 0
+        
+        # Call agent.moveToNextState(action_t) on the current agent action at timestep t
+        agent.moveToNextState(agent.actions[t])
+        
+        # yield known_map
         yield known_map
 
 #______________________________________________________________________________
