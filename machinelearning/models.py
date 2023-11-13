@@ -51,6 +51,11 @@ class RegressionModel(object):
     def __init__(self):
         # Initialize your model parameters here
         "*** YOUR CODE HERE ***"
+        self.batch_size = 1
+        self.wf = nn.Parameter(1, 100)
+        self.bf = nn.Parameter(1, 100)
+        self.wr = nn.Parameter(100, 1)
+        self.br = nn.Parameter(1, 1)
 
     def run(self, x):
         """
@@ -62,6 +67,8 @@ class RegressionModel(object):
             A node with shape (batch_size x 1) containing predicted y-values
         """
         "*** YOUR CODE HERE ***"
+        relued = nn.ReLU(nn.AddBias(nn.Linear(x, self.wf), self.bf))
+        return nn.AddBias(nn.Linear(relued, self.wr), self.br)
 
     def get_loss(self, x, y):
         """
@@ -74,12 +81,26 @@ class RegressionModel(object):
         Returns: a loss node
         """
         "*** YOUR CODE HERE ***"
+        return nn.SquareLoss(self.run(x), y)
 
     def train(self, dataset):
         """
         Trains the model.
         """
         "*** YOUR CODE HERE ***"
+        mistakes = 1
+        while mistakes > 0:
+            mistakes = 0
+            for x, y in dataset.iterate_once(self.batch_size):
+                losses = self.get_loss(x, y)
+                gradient = nn.gradients(losses, [self.wf, self.wr, self.bf, self.br])
+                if nn.as_scalar(self.get_loss(nn.Constant(dataset.x), nn.Constant(dataset.y))) >= 0.02:
+                    self.wf.update(gradient[0], -0.005)
+                    self.wr.update(gradient[1], -0.005)
+                    self.bf.update(gradient[2], -0.005)
+                    self.br.update(gradient[3], -0.005)
+                    mistakes += 1
+
 
 class DigitClassificationModel(object):
     """
