@@ -191,6 +191,14 @@ class LanguageIDModel(object):
 
         # Initialize your model parameters here
         "*** YOUR CODE HERE ***"
+        self.batch_size = 10
+        self.alpha = 0.01
+        self.w0 = nn.Parameter(self.num_chars, 300)  # w0
+        self.b0 = nn.Parameter(1, 300)  # b0
+        self.w1 = nn.Parameter(300, 300)  # w1
+        self.b1 = nn.Parameter(1, 300)  # b1
+        self.wf = nn.Parameter(300, 5)  # wf
+        self.bf = nn.Parameter(1, 5)  # bf
 
     def run(self, xs):
         """
@@ -222,6 +230,13 @@ class LanguageIDModel(object):
                 (also called logits)
         """
         "*** YOUR CODE HERE ***"
+        h = nn.ReLU(nn.AddBias(nn.Linear(xs[0], self.w0), self.b0))
+        z = h
+        for i, x in enumerate(xs[1:]):
+            z = nn.Add(nn.ReLU(nn.AddBias(nn.Linear(z, self.w1), self.b1)),
+                       nn.ReLU(nn.AddBias(nn.Linear(x, self.w0), self.b0)))
+            z = nn.Add(nn.ReLU(nn.Linear(z, self.w1)), nn.ReLU(nn.Linear(x, self.w0)))
+        return nn.AddBias(nn.Linear(z, self.wf), self.bf)
 
     def get_loss(self, xs, y):
         """
@@ -238,9 +253,25 @@ class LanguageIDModel(object):
         Returns: a loss node
         """
         "*** YOUR CODE HERE ***"
+        return nn.SoftmaxLoss(self.run(xs), y)
 
     def train(self, dataset):
         """
         Trains the model.
         """
         "*** YOUR CODE HERE ***"
+        while True:
+
+            for x, y in dataset.iterate_once(self.batch_size):
+                loss = self.get_loss(x, y)
+                grad = nn.gradients(loss, [self.w0, self.w1, self.wf, self.b0, self.b1, self.bf])
+
+                self.w0.update(grad[0], -self.alpha)
+                self.w1.update(grad[1], -self.alpha)
+                self.wf.update(grad[2], -self.alpha)
+                self.b0.update(grad[3], -self.alpha)
+                self.b1.update(grad[4], -self.alpha)
+                self.bf.update(grad[5], -self.alpha)
+
+            if dataset.get_validation_accuracy() >= 0.85:
+                return
