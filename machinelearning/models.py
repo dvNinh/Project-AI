@@ -136,6 +136,15 @@ class DigitClassificationModel(object):
         # Initialize your model parameters here
         "*** YOUR CODE HERE ***"
 
+        self.hidden_layer_size = 200
+        self.batch_size = 100
+        self.learning_rate = 0.5
+
+        self.wf = nn.Parameter(784, self.hidden_layer_size)
+        self.bf = nn.Parameter(1, self.hidden_layer_size)
+        self.wr = nn.Parameter(self.hidden_layer_size, 10)
+        self.br = nn.Parameter(1, 10)
+
     def run(self, x):
         """
         Runs the model for a batch of examples.
@@ -152,6 +161,9 @@ class DigitClassificationModel(object):
         """
         "*** YOUR CODE HERE ***"
 
+        relued = nn.ReLU(nn.AddBias(nn.Linear(x, self.wf), self.bf))
+        return nn.AddBias(nn.Linear(relued, self.wr), self.br)
+
     def get_loss(self, x, y):
         """
         Computes the loss for a batch of examples.
@@ -166,12 +178,21 @@ class DigitClassificationModel(object):
         Returns: a loss node
         """
         "*** YOUR CODE HERE ***"
+        return nn.SoftmaxLoss(self.run(x), y)
 
     def train(self, dataset):
         """
         Trains the model.
         """
         "*** YOUR CODE HERE ***"
+        while dataset.get_validation_accuracy() < 0.975:
+            for x, y in dataset.iterate_once(self.batch_size):
+                loss = self.get_loss(x, y)
+                gradient = nn.gradients(loss, [self.wf, self.wr, self.bf, self.br])
+                self.wf.update(gradient[0], -self.learning_rate)
+                self.wr.update(gradient[1], -self.learning_rate)
+                self.bf.update(gradient[2], -self.learning_rate)
+                self.br.update(gradient[3], -self.learning_rate)
 
 class LanguageIDModel(object):
     """
